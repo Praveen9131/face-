@@ -62,41 +62,34 @@ def generate_frames():
                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
 # Function to generate and save the emotion distribution chart
-# Function to generate and save the emotion distribution bar chart
 def generate_emotion_chart(emotion_counter):
     emotions = list(emotion_counter.keys())
     counts = list(emotion_counter.values())
 
-    # Create a bar chart with emojis
-    fig, ax = plt.subplots(figsize=(8, 6))  # Adjust the figure size as needed
+    # Create a pie chart with emojis
+    fig, ax = plt.subplots()
+    ax.pie(counts, labels=emotions, autopct='%1.1f%%', startangle=90)
 
-    # Bar chart with additional spacing between emotion names
-    bar_width = 0.8
-    bar_positions = np.arange(len(emotions))
+    # Place emojis on the pie chart with additional spacing between letters
+    for i, (emotion, count) in enumerate(zip(emotions, counts)):
+        emoji_character = emotion_emojis.get(emotion, '❓')  # Default emoji if not found
+        angle = 360 * sum(counts[:i]) / sum(counts)  # Calculate the angle for the current emotion
+        x = 0.5 + 0.35 * np.cos(np.radians(angle))  # Place the emoji in a circular pattern
+        y = 0.5 + 0.35 * np.sin(np.radians(angle))
 
-    # Plot bars
-    bars = ax.bar(bar_positions, counts, width=bar_width, align='center')
+        # Introduce additional spacing between letters
+        letter_spacing = 2.05
+        for letter_i, letter in enumerate(emoji_character):
+            letter_x = x + (letter_i - len(emoji_character) / 2) * letter_spacing
+            ax.text(letter_x, y, letter, fontsize=40, va='center', ha='center')
 
-    # Set emotion names as x-axis labels with additional spacing
-    name_spacing = 0.2
-    ax.set_xticks(bar_positions)
-    ax.set_xticklabels(emotions, ha='center', rotation=45)
-    ax.tick_params(axis='x', pad=name_spacing * 100)  # Adjust spacing between emotion names
-
-    # Display counts on top of the bars
-    for bar, count in zip(bars, counts):
-        height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width() / 2, height, f'{count}\n', ha='center', va='bottom')
-
-    # Save the chart in memory with reduced size and resolution
+    # Save the chart in memory
     chart_image = io.BytesIO()
-    plt.savefig(chart_image, format='png', bbox_inches='tight', dpi=100)  # Adjust dpi as needed
+    plt.savefig(chart_image, format='png')
     plt.close()
 
     # Return the chart image as bytes
     return chart_image.getvalue()
-
-
 
 # Route to serve the webcam feed with emotion information
 @app.route('/video_feed')
